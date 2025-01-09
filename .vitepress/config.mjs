@@ -6,20 +6,13 @@ export default defineConfig({
   description: "A VitePress Site",
   srcDir: "docs",
   lastUpdated: {
-    text: "Updated at",
+    text: "1Updated at",
     formatOptions: {
       dateStyle: "full",
       timeStyle: "medium",
     },
   },
   themeConfig: {
-    lastUpdated: {
-      text: "Updated at",
-      formatOptions: {
-        dateStyle: "full",
-        timeStyle: "medium",
-      },
-    },
     // https://vitepress.dev/reference/default-theme-config
     nav: [
       { text: "Home", link: "/" },
