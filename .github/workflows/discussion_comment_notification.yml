@@ -19,35 +19,22 @@ jobs:
             echo "::set-output name=trigger::none"
           fi
 
-      - name: Send email notification for mention
-        if: steps.check.outputs.trigger == 'mention'
+      - name: Send email notification for discussion actions
+        if: github.event_name == 'discussion' || github.event_name == 'discussion_comment'
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.qq.com
           server_port: 465
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "You were mentioned in a Discussion"
+          subject: ${{ github.event_name == 'discussion' && github.event.action == 'created' ? 'New Discussion Created' : 'New Comment on Discussion' }}
           html_body: |
-            <p>You were mentioned in a discussion: <a href="${{ github.event.discussion.html_url }}">${{ github.event.discussion.title }}</a></p>
+            <p>A new action was performed on a discussion: <a href="${{ github.event.discussion.html_url }}">${{ github.event.discussion.title }}</a></p>
+            <p>Action type: <b>${{ github.event_name }}</b></p>
+            {{ if github.event_name == 'discussion_comment' }}
             <p>Comment by: <b>${{ github.event.comment.user.login }}</b></p>
             <p>Comment content: <pre>${{ github.event.comment.body }}</pre></p>
-          to: ${{ secrets.EMAIL_TO }}
-          from: GitHub Notifications <${{ secrets.EMAIL_USERNAME }}>
-
-      - name: Send email notification for new discussion
-        if: steps.check.outputs.trigger == 'new_discussion'
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: smtp.qq.com
-          server_port: 465
-          username: ${{ secrets.EMAIL_USERNAME }}
-          password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "New Discussion Created"
-          html_body: |
-            <p>A new discussion was created: <a href="${{ github.event.discussion.html_url }}">${{ github.event.discussion.title }}</a></p>
-            <p>Created by: <b>${{ github.event.discussion.user.login }}</b></p>
-            <p>Discussion content: <pre>${{ github.event.discussion.body }}</pre></p>
+            {{ endif }}
           to: ${{ secrets.EMAIL_TO }}
           from: GitHub Notifications <${{ secrets.EMAIL_USERNAME }}>
 
