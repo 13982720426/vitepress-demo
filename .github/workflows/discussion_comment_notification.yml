@@ -1,0 +1,25 @@
+name: Discussion Comment Notification
+on:
+  discussion_comment:
+    types: [created, edited]
+  issue_comment:
+    types: [created]
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send email notification
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.qq.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "New Comment on Discussion"
+          body: |
+            A new comment was posted on discussion: ${{ github.event.discussion.html_url }}
+            Comment by: ${{ github.event.comment.user.login }}
+            Comment content: ${{ github.event.comment.body }}
+          to: ${{ secrets.EMAIL_TO }}
+          from: GitHub Notifications <${{ secrets.EMAIL_USERNAME }}>
+          content_type: text/html

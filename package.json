@@ -12,6 +12,9 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@giscus/vue": "^3.1.1",
+    "sass-embedded": "^1.83.1",
     "vitepress": "^1.5.0"
-  }
+  },
+  "type": "module"
 }
