@@ -1,0 +1,59 @@
+name: Issue Comment Notification
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if mentioned or new issue
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "issue_comment" && "${{ github.event.comment.body }}" == *"@13982720426"* ]]; then
+            echo "::set-output name=trigger::mention"
+          elif [[ "${{ github.event_name }}" == "issues" && "${{ github.event.action }}" == "opened" ]]; then
+            echo "::set-output name=trigger::new_issue"
+          else
+            echo "::set-output name=trigger::none"
+          fi
+
+      - name: Send email notification for issue actions
+        if: github.event_name == 'issues' || github.event_name == 'issue_comment'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.qq.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: ${{ github.event_name == 'issues' && 'New Issue Created' || 'New Comment on Issue' }}
+          html_body: |
+            <p>A new action was performed on an issue: <a href="${{ github.event.issue.html_url }}">${{ github.event.issue.title }}</a></p>
+            <p>Action type: <b>${{ github.event_name }}</b></p>
+            ${{ github.event_name == 'issue_comment' && format('<p>Comment by: <b>{0}</b></p>', github.event.comment.user.login) || '' }}
+            ${{ github.event_name == 'issue_comment' && format('<p>Comment content: <pre>{0}</pre></p>', github.event.comment.body) || '' }}
+            ${{ github.event_name == 'issues' && format('<p>Issue content: <pre>{0}</pre></p>', github.event.issue.body) || '' }}
+            <p>Created at: <b>${{ github.event.issue.created_at }}</b></p>
+          to: ${{ secrets.EMAIL_TO }}
+          cc: ${{ secrets.EMAIL_CC }}
+          bcc: ${{ secrets.EMAIL_BCC }}
+          from: GitHub Notifications <${{ secrets.EMAIL_USERNAME }}>
+
+      - name: Send failure notification
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.qq.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "GitHub Actions Workflow Failed"
+          html_body: |
+            <p>The GitHub Actions workflow failed.</p>
+            <p>Repository: ${{ github.repository }}</p>
+            <p>Workflow: ${{ github.workflow }}</p>
+            <p>Event: ${{ github.event_name }}</p>
+            <p>Error details: <pre>${{ github.event }}</pre></p>
+          to: ${{ secrets.EMAIL_TO }}
+          from: GitHub Notifications <${{ secrets.EMAIL_USERNAME }}>
