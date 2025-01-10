@@ -1,0 +1,61 @@
+name: Pull Request Notification
+on:
+  pull_request:
+    types: [opened, edited]
+  pull_request_review_comment:
+    types: [created, edited]
+  pull_request_review:
+    types: [submitted, edited]
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check if mentioned or new PR
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request_review_comment" && "${{ github.event.comment.body }}" == *"@13982720426"* ]]; then
+            echo "::set-output name=trigger::mention"
+          elif [[ "${{ github.event_name }}" == "pull_request" && "${{ github.event.action }}" == "opened" ]]; then
+            echo "::set-output name=trigger::new_pr"
+          else
+            echo "::set-output name=trigger::none"
+          fi
+
+      - name: Send email notification for PR actions
+        if: github.event_name == 'pull_request' || github.event_name == 'pull_request_review_comment' || github.event_name == 'pull_request_review'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.qq.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: ${{ github.event_name == 'pull_request' && 'New Pull Request Created' || 'New Comment on Pull Request' }}
+          html_body: |
+            <p>A new action was performed on a pull request: <a href="${{ github.event.pull_request.html_url }}">${{ github.event.pull_request.title }}</a></p>
+            <p>Action type: <b>${{ github.event_name }}</b></p>
+            ${{ github.event_name == 'pull_request_review_comment' && format('<p>Comment by: <b>{0}</b></p>', github.event.comment.user.login) || '' }}
+            ${{ github.event_name == 'pull_request_review_comment' && format('<p>Comment content: <pre>{0}</pre></p>', github.event.comment.body) || '' }}
+            ${{ github.event_name == 'pull_request' && format('<p>Pull Request content: <pre>{0}</pre></p>', github.event.pull_request.body) || '' }}
+            <p>Created at: <b>${{ github.event.pull_request.created_at }}</b></p>
+          to: ${{ secrets.EMAIL_TO }}
+          cc: ${{ secrets.EMAIL_CC }}
+          bcc: ${{ secrets.EMAIL_BCC }}
+          from: GitHub Notifications <${{ secrets.EMAIL_USERNAME }}>
+
+      - name: Send failure notification
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.qq.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "GitHub Actions Workflow Failed"
+          html_body: |
+            <p>The GitHub Actions workflow failed.</p>
+            <p>Repository: ${{ github.repository }}</p>
+            <p>Workflow: ${{ github.workflow }}</p>
+            <p>Event: ${{ github.event_name }}</p>
+            <p>Error details: <pre>${{ github.event }}</pre></p>
+          to: ${{ secrets.EMAIL_TO }}
+          from: GitHub Notifications <${{ secrets.EMAIL_USERNAME }}>
