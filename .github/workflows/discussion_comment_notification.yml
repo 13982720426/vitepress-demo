@@ -31,8 +31,8 @@ jobs:
           html_body: |
             <p>A new action was performed on a discussion: <a href="${{ github.event.discussion.html_url }}">${{ github.event.discussion.title }}</a></p>
             <p>Action type: <b>${{ github.event_name }}</b></p>
-            ${{ github.event_name == 'discussion_comment' && '<p>Comment by: <b>' + github.event.comment.user.login + '</b></p>' || '' }}
-            ${{ github.event_name == 'discussion_comment' && '<p>Comment content: <pre>' + github.event.comment.body + '</pre></p>' || '' }}
+            ${{ github.event_name == 'discussion_comment' && format('<p>Comment by: <b>{0}</b></p>', github.event.comment.user.login) || '' }}
+            ${{ github.event_name == 'discussion_comment' && format('<p>Comment content: <pre>{0}</pre></p>', github.event.comment.body) || '' }}
           to: ${{ secrets.EMAIL_TO }}
           from: GitHub Notifications <${{ secrets.EMAIL_USERNAME }}>
 
