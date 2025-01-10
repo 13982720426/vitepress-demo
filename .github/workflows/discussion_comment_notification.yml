@@ -31,10 +31,8 @@ jobs:
           html_body: |
             <p>A new action was performed on a discussion: <a href="${{ github.event.discussion.html_url }}">${{ github.event.discussion.title }}</a></p>
             <p>Action type: <b>${{ github.event_name }}</b></p>
-            ${{ if github.event_name == 'discussion_comment' }}
-            <p>Comment by: <b>${{ github.event.comment.user.login }}</b></p>
-            <p>Comment content: <pre>${{ github.event.comment.body }}</pre></p>
-            ${{ endif }}
+            <p v-if="github.event_name == 'discussion_comment'">Comment by: <b>${{ github.event.comment.user.login }}</b></p>
+            <p v-if="github.event_name == 'discussion_comment'">Comment content: <pre>${{ github.event.comment.body }}</pre></p>
           to: ${{ secrets.EMAIL_TO }}
           from: GitHub Notifications <${{ secrets.EMAIL_USERNAME }}>
 
