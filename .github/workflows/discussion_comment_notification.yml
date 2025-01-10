@@ -8,18 +8,45 @@ jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Send email notification
+      - name: Check if mentioned or new discussion
+        id: check
+        run: |
+          if [[ "${{ github.event_name }}" == "discussion_comment" && "${{ github.event.comment.body }}" == *"@13982720426"* ]]; then
+            echo "::set-output name=trigger::mention"
+          elif [[ "${{ github.event_name }}" == "discussion" && "${{ github.event.action }}" == "created" ]]; then
+            echo "::set-output name=trigger::new_discussion"
+          else
+            echo "::set-output name=trigger::none"
+          fi
+
+      - name: Send email notification for mention
+        if: steps.check.outputs.trigger == 'mention'
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.qq.com
           server_port: 465
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-          subject: "New Comment on Discussion"
-          body: |
-            A new comment was posted on discussion: ${{ github.event.discussion.html_url }}
-            Comment by: ${{ github.event.comment.user.login }}
-            Comment content: ${{ github.event.comment.body }}
+          subject: "You were mentioned in a Discussion"
+          html_body: |
+            <p>You were mentioned in a discussion: <a href="${{ github.event.discussion.html_url }}">${{ github.event.discussion.title }}</a></p>
+            <p>Comment by: <b>${{ github.event.comment.user.login }}</b></p>
+            <p>Comment content: <pre>${{ github.event.comment.body }}</pre></p>
           to: ${{ secrets.EMAIL_TO }}
           from: GitHub Notifications <${{ secrets.EMAIL_USERNAME }}>
-          content_type: text/html
+
+      - name: Send email notification for new discussion
+        if: steps.check.outputs.trigger == 'new_discussion'
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.qq.com
+          server_port: 465
+          username: ${{ secrets.EMAIL_USERNAME }}
+          password: ${{ secrets.EMAIL_PASSWORD }}
+          subject: "New Discussion Created"
+          html_body: |
+            <p>A new discussion was created: <a href="${{ github.event.discussion.html_url }}">${{ github.event.discussion.title }}</a></p>
+            <p>Created by: <b>${{ github.event.discussion.user.login }}</b></p>
+            <p>Discussion content: <pre>${{ github.event.discussion.body }}</pre></p>
+          to: ${{ secrets.EMAIL_TO }}
+          from: GitHub Notifications <${{ secrets.EMAIL_USERNAME }}>
